@@ -156,10 +156,10 @@ const FaturasList = () => {
                 </td>
                 <td className="px-6 py-4">
                   <p className="text-sm text-gray-600">{fatura.mes_referencia}</p>
-                  <p className="text-xs text-gray-400">Vence: {new Date(fatura.data_vencimento).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-xs text-gray-400">Vence: {fatura.data_vencimento ? new Date(fatura.data_vencimento).toLocaleDateString('pt-BR') : '-'}</p>
                 </td>
-                <td className="px-6 py-4 text-sm font-medium">R$ {fatura.valor_fatura_distribuidora.toFixed(2)}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-success">R$ {fatura.valor_economia_gd.toFixed(2)}</td>
+                <td className="px-6 py-4 text-sm font-medium">R$ {Number(fatura.valor_fatura_distribuidora || 0).toFixed(2)}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-success">R$ {Number(fatura.valor_economia_gd || 0).toFixed(2)}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${fatura.status_boleto_vigor === 'processada' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
                     }`}>
@@ -221,15 +221,15 @@ const BoletosList = () => {
             {boletos.map(boleto => (
               <tr key={boleto.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
-                  <p className="font-semibold text-gray-900">BOLETO #{boleto.id.toUpperCase()}</p>
-                  <p className="text-xs text-gray-400">Emissão: {new Date(boleto.data_emissao).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-semibold text-gray-900">BOLETO #{String(boleto.id).toUpperCase()}</p>
+                  <p className="text-xs text-gray-400">Emissão: {boleto.data_emissao ? new Date(boleto.data_emissao).toLocaleDateString('pt-BR') : '-'}</p>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(boleto.data_vencimento).toLocaleDateString('pt-BR')}
+                  {boleto.data_vencimento ? new Date(boleto.data_vencimento).toLocaleDateString('pt-BR') : '-'}
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-sm font-bold text-gray-900">R$ {boleto.valor_total.toFixed(2)}</p>
-                  <p className="text-[10px] text-success">Desconto: R$ {boleto.valor_desconto.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-gray-900">R$ {Number(boleto.valor_total || 0).toFixed(2)}</p>
+                  <p className="text-[10px] text-success">Desconto: R$ {Number(boleto.valor_desconto || 0).toFixed(2)}</p>
                 </td>
                 <td className="px-6 py-4">
                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${boleto.status === 'pago' ? 'bg-success/10 text-success' :
