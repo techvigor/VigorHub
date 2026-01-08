@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { 
-  BarChart3, 
-  FileText, 
-  Receipt, 
-  Plus, 
-  Filter, 
-  Download, 
+import {
+  BarChart3,
+  FileText,
+  Receipt,
+  Plus,
+  Filter,
+  Download,
   ChevronDown,
   Edit,
   Trash2,
@@ -17,7 +17,7 @@ import {
   Calendar,
   PieChart
 } from 'lucide-react';
-import { mockFaturas, mockBoletosVigor } from '../../mockData';
+import { api } from '../../src/services/api';
 
 const FinanceiroLayout: React.FC = () => {
   const location = useLocation();
@@ -26,11 +26,10 @@ const FinanceiroLayout: React.FC = () => {
   const NavLink = ({ to, label, icon: Icon }: { to: string, label: string, icon: any }) => {
     const active = currentPath === `/financeiro${to}` || (to === '' && currentPath === '/financeiro');
     return (
-      <Link 
+      <Link
         to={`/financeiro${to}`}
-        className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 ${
-          active ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
-        }`}
+        className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 ${active ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
       >
         <Icon size={16} />
         {label}
@@ -58,6 +57,20 @@ const FinanceiroLayout: React.FC = () => {
 };
 
 const FinanceiroDashboard = () => {
+  const [faturas, setFaturas] = useState<any[]>([]);
+  const [boletos, setBoletos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    Promise.all([api.faturas.list(), api.boletos.list()])
+      .then(([f, b]) => {
+        setFaturas(f);
+        setBoletos(b);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Carregando resumo...</div>;
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex justify-between items-center">
@@ -72,17 +85,17 @@ const FinanceiroDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
           <p className="text-gray-500 text-sm font-medium">Total Faturas</p>
-          <p className="text-2xl font-montserrat font-bold mt-1 text-gray-900">{mockFaturas.length}</p>
+          <p className="text-2xl font-montserrat font-bold mt-1 text-gray-900">{faturas.length}</p>
         </div>
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
           <p className="text-gray-500 text-sm font-medium">Boletos Pendentes</p>
           <p className="text-2xl font-montserrat font-bold mt-1 text-warning">
-            {mockBoletosVigor.filter(b => b.status !== 'pago').length}
+            {boletos.filter(b => b.status !== 'pago').length}
           </p>
         </div>
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
           <p className="text-gray-500 text-sm font-medium">Total Emitido</p>
-          <p className="text-2xl font-montserrat font-bold mt-1 text-primary">R$ 2.720,00</p>
+          <p className="text-2xl font-montserrat font-bold mt-1 text-primary">R$ {boletos.reduce((acc, b) => acc + (Number(b.valor_total) || 0), 0).toFixed(2)}</p>
         </div>
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
           <p className="text-gray-500 text-sm font-medium">Economia Total</p>
@@ -100,6 +113,14 @@ const FinanceiroDashboard = () => {
 };
 
 const FaturasList = () => {
+  const [faturas, setFaturas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    api.faturas.list().then(setFaturas).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Carregando faturas...</div>;
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex justify-between items-center">
@@ -127,7 +148,7 @@ const FaturasList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {mockFaturas.map(fatura => (
+            {faturas.map(fatura => (
               <tr key={fatura.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <p className="font-semibold text-gray-900">{fatura.cliente_nome}</p>
@@ -140,9 +161,8 @@ const FaturasList = () => {
                 <td className="px-6 py-4 text-sm font-medium">R$ {fatura.valor_fatura_distribuidora.toFixed(2)}</td>
                 <td className="px-6 py-4 text-sm font-semibold text-success">R$ {fatura.valor_economia_gd.toFixed(2)}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                    fatura.status_boleto_vigor === 'processada' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${fatura.status_boleto_vigor === 'processada' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                    }`}>
                     {fatura.status_boleto_vigor}
                   </span>
                 </td>
@@ -169,6 +189,14 @@ const FaturasList = () => {
 };
 
 const BoletosList = () => {
+  const [boletos, setBoletos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    api.boletos.list().then(setBoletos).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Carregando boletos...</div>;
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex justify-between items-center">
@@ -190,7 +218,7 @@ const BoletosList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {mockBoletosVigor.map(boleto => (
+            {boletos.map(boleto => (
               <tr key={boleto.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <p className="font-semibold text-gray-900">BOLETO #{boleto.id.toUpperCase()}</p>
@@ -204,21 +232,20 @@ const BoletosList = () => {
                   <p className="text-[10px] text-success">Desconto: R$ {boleto.valor_desconto.toFixed(2)}</p>
                 </td>
                 <td className="px-6 py-4">
-                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${
-                    boleto.status === 'pago' ? 'bg-success/10 text-success' : 
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${boleto.status === 'pago' ? 'bg-success/10 text-success' :
                     boleto.status === 'emitido' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'
-                  }`}>
+                    }`}>
                     {boleto.status === 'pago' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                     <span className="text-[10px] font-bold uppercase">{boleto.status}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                   <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     <button className="text-primary text-xs font-bold hover:underline">Ver PDF Fatura</button>
                     <button className="p-2 bg-primary/5 text-primary rounded hover:bg-primary/10 transition-colors">
                       <Download size={16} />
                     </button>
-                   </div>
+                  </div>
                 </td>
               </tr>
             ))}

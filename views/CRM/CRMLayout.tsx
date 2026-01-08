@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { 
-  Users, 
-  Layout, 
-  Plus, 
-  Search, 
+import {
+  Users,
+  Layout,
+  Plus,
+  Search,
   MoreVertical,
   Calendar,
   DollarSign
 } from 'lucide-react';
-import { mockPropostas } from '../../mockData';
+import { api } from '../../src/services/api';
 
 const CRMLayout: React.FC = () => {
   const location = useLocation();
@@ -19,11 +19,10 @@ const CRMLayout: React.FC = () => {
   const NavLink = ({ to, label, icon: Icon }: { to: string, label: string, icon: any }) => {
     const active = currentPath === `/crm${to}` || (to === '' && currentPath === '/crm');
     return (
-      <Link 
+      <Link
         to={`/crm${to}`}
-        className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 ${
-          active ? 'border-secondary text-secondary' : 'border-transparent text-gray-500 hover:text-gray-700'
-        }`}
+        className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 ${active ? 'border-secondary text-secondary' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
       >
         <Icon size={16} />
         {label}
@@ -52,14 +51,22 @@ const CRMLayout: React.FC = () => {
 };
 
 const PropostasList = () => {
+  const [propostas, setPropostas] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    api.propostas.list().then(setPropostas).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Carregando propostas...</div>;
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex gap-4 items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Buscar por cliente ou vendedor..." 
+          <input
+            type="text"
+            placeholder="Buscar por cliente ou vendedor..."
             className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-secondary/50"
           />
         </div>
@@ -84,7 +91,7 @@ const PropostasList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {mockPropostas.map(proposta => (
+            {propostas.map(proposta => (
               <tr key={proposta.id} className="hover:bg-gray-50/50">
                 <td className="px-6 py-4 font-semibold text-gray-900">{proposta.cliente_nome}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">R$ {proposta.valor_estimado?.toLocaleString()}</td>
@@ -108,6 +115,14 @@ const PropostasList = () => {
 };
 
 const KanbanBoard = () => {
+  const [propostas, setPropostas] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    api.propostas.list().then(setPropostas).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Carregando kanban...</div>;
   const columns = [
     { id: 'proposta_feita', label: 'Proposta Feita' },
     { id: 'contrato_enviado', label: 'Contrato Enviado' },
@@ -123,16 +138,16 @@ const KanbanBoard = () => {
             <h3 className="font-poppins font-bold text-gray-700 flex items-center gap-2">
               {col.label}
               <span className="bg-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">
-                {mockPropostas.filter(p => p.status === col.id).length}
+                {propostas.filter(p => p.status === col.id).length}
               </span>
             </h3>
           </div>
           <div className="flex-1 bg-gray-100/50 rounded-2xl p-4 space-y-4 border border-gray-100 overflow-y-auto">
-            {mockPropostas.filter(p => p.status === col.id).map(proposta => (
+            {propostas.filter(p => p.status === col.id).map(proposta => (
               <div key={proposta.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-secondary transition-all cursor-move">
                 <h4 className="font-bold text-gray-900 mb-2">{proposta.cliente_nome}</h4>
                 <div className="space-y-2">
-                   <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
                     <DollarSign size={14} className="text-success" />
                     R$ {proposta.valor_estimado?.toLocaleString()}
                   </div>
@@ -143,7 +158,7 @@ const KanbanBoard = () => {
                 </div>
               </div>
             ))}
-            {mockPropostas.filter(p => p.status === col.id).length === 0 && (
+            {propostas.filter(p => p.status === col.id).length === 0 && (
               <div className="h-20 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-sm">
                 Nenhum card aqui
               </div>

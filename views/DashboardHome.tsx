@@ -1,27 +1,54 @@
 
 import React from 'react';
-import { 
-  Users, 
-  CheckSquare, 
-  ArrowRight, 
-  TrendingUp, 
-  Calendar, 
+import {
+  Users,
+  CheckSquare,
+  ArrowRight,
+  TrendingUp,
+  Calendar,
   Zap,
   Clock,
   ExternalLink,
   FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { mockPropostas, mockTarefas, currentUser } from '../mockData';
+import { api } from '../src/services/api';
 
 const DashboardHome: React.FC = () => {
+  const [propostas, setPropostas] = React.useState<any[]>([]);
+  const [tarefas, setTarefas] = React.useState<any[]>([]);
+  const [user, setUser] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [propostasData, tarefasData, userData] = await Promise.all([
+          api.propostas.list(),
+          api.tarefas.list(),
+          api.auth.getUser()
+        ]);
+        setPropostas(propostasData);
+        setTarefas(tarefasData);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-gray-500">Carregando dashboard...</div>;
+
   // Logic 1: Count propostas where status IN ('proposta_feita', 'contrato_enviado')
-  const openProposalsCount = mockPropostas.filter(p => 
+  const openProposalsCount = propostas.filter(p =>
     ['proposta_feita', 'contrato_enviado'].includes(p.status)
   ).length;
 
   // Logic 2: Count tasks not concluded or canceled
-  const activeTasks = mockTarefas.filter(t => !['concluido', 'cancelado'].includes(t.status));
+  const activeTasks = tarefas.filter(t => !['concluido', 'cancelado'].includes(t.status));
   const activeTasksCount = activeTasks.length;
 
   // Logic 3: Tasks due within 7 days
@@ -38,7 +65,7 @@ const DashboardHome: React.FC = () => {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-poppins font-bold text-gray-900">
-          Bem-vindo, {currentUser.full_name.split(' ')[0]} 👋
+          Bem-vindo, {user?.full_name?.split(' ')[0] || 'Gestor'} 👋
         </h1>
         <p className="text-gray-500">Confira o que está acontecendo nas operações da Vigor hoje.</p>
       </div>
@@ -59,8 +86,8 @@ const DashboardHome: React.FC = () => {
             <p className="text-4xl font-montserrat font-bold text-gray-900 mt-1">{openProposalsCount}</p>
             <p className="text-sm text-gray-400 mt-2">Propostas enviadas ou em análise.</p>
           </div>
-          <Link 
-            to="/crm" 
+          <Link
+            to="/crm"
             className="mt-4 flex items-center justify-center gap-2 bg-gray-50 text-gray-700 font-semibold py-2 rounded-xl group-hover:bg-secondary group-hover:text-white transition-all"
           >
             Ir para negociações <ArrowRight size={18} />
@@ -84,8 +111,8 @@ const DashboardHome: React.FC = () => {
             <p className="text-4xl font-montserrat font-bold text-gray-900 mt-1">{activeTasksCount}</p>
             <p className="text-sm text-gray-400 mt-2">Tarefas pendentes sob sua responsabilidade.</p>
           </div>
-          <Link 
-            to="/tarefas" 
+          <Link
+            to="/tarefas"
             className="mt-4 flex items-center justify-center gap-2 bg-gray-50 text-gray-700 font-semibold py-2 rounded-xl group-hover:bg-primary group-hover:text-white transition-all"
           >
             Ir para tarefas <ArrowRight size={18} />
@@ -105,8 +132,8 @@ const DashboardHome: React.FC = () => {
             <p className="text-4xl font-montserrat font-bold text-gray-900 mt-1">R$ 4.250</p>
             <p className="text-sm text-gray-400 mt-2">Total de descontos aplicados este mês.</p>
           </div>
-          <Link 
-            to="/financeiro" 
+          <Link
+            to="/financeiro"
             className="mt-4 flex items-center justify-center gap-2 bg-gray-50 text-gray-700 font-semibold py-2 rounded-xl group-hover:bg-info group-hover:text-white transition-all"
           >
             Dashboard Financeiro <ArrowRight size={18} />
