@@ -125,10 +125,61 @@ const mockTarefas = [
 async function seed() {
     console.log('Seeding Supabase...');
 
-    // 1. Profiles
-    const { error: profileError } = await supabase.from('profiles').upsert([currentUser]);
-    if (profileError) console.error('Error seeding profiles:', profileError);
-    else console.log('✅ Profiles seeded');
+    // 1. Authentication & Profiles
+    const felipe = {
+        email: 'felipe.braz@vigorenergy.com.br',
+        password: 'Vigor@123',
+        full_name: 'Felipe Braz',
+        role: 'adm', // IMPORTANT: 'adm' role
+        avatar_url: 'https://ui-avatars.com/api/?name=Felipe+Braz&background=10b981&color=fff'
+    };
+
+    console.log(`Creating user: ${felipe.email}...`);
+
+    // Try to sign up (if user doesn't exist)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: felipe.email,
+        password: felipe.password,
+    });
+
+    if (authError) {
+        console.warn('Auth sign up warning (user might already exist):', authError.message);
+    }
+
+    // Whether new or existing, we try to upsert the profile. 
+    // We need the ID. If signUp succeeded, we have it. If user exists, we might not get it from signUp in some configs, 
+    // but usually we do if we can login. 
+    // Ideally we would verify existence via admin API, but here we'll try to insert profile using the ID if we got it,
+    // or we assume it's 'u1' for the mock data migration (WAIT. We are moving away from mock u1).
+    // Let's use the ID from authData.user.id if available.
+
+    let userId = authData.user?.id;
+
+    if (!userId) {
+        // Fallback: try to signIn to get the ID if signUp said "User already registered" but returned no user (rare but possible with rate limits etc)
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+            email: felipe.email,
+            password: felipe.password
+        });
+        userId = signInData.user?.id;
+    }
+
+    if (userId) {
+        console.log(`User ID: ${userId}`);
+        const { error: profileError } = await supabase.from('profiles').upsert([{
+            id: userId,
+            full_name: felipe.full_name,
+            role: felipe.role,
+            avatar_url: felipe.avatar_url,
+            created_at: new Date().toISOString()
+        }]);
+
+        if (profileError) console.error('Error seeding profile:', profileError);
+        else console.log('✅ Profile seeded for Felipe');
+    } else {
+        console.error('Could not obtain User ID for seeding profile. Is the Supabase project configured?');
+    }
+
 
     // 2. Faturas
     const faturaIdMap = {};

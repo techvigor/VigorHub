@@ -33,9 +33,22 @@ export const api = {
     },
     auth: {
         getUser: async () => {
-            const { data, error } = await supabase.from('profiles').select('*').eq('id', 'u1').single();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return null;
+
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
             if (error) return null;
             return data as Profile;
+        },
+        updateProfile: async (id: string, updates: Partial<Profile>) => {
+            const { data, error } = await supabase.from('profiles').update(updates).eq('id', id).select().single();
+            if (error) throw error;
+            return data as Profile;
+        },
+        listProfiles: async () => {
+            const { data, error } = await supabase.from('profiles').select('*').order('full_name');
+            if (error) throw error;
+            return (data || []) as Profile[];
         }
     }
 };

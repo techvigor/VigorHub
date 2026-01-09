@@ -1,11 +1,12 @@
 
-export type UserRole = 'admin' | 'gerente' | 'vendedor';
+export type UserRole = 'adm' | 'gerente' | 'vendedor';
 
 export interface Profile {
   id: string;
   full_name: string;
   role: UserRole;
   avatar_url: string;
+  job_title?: string;
   created_at: string;
 }
 

@@ -20,6 +20,9 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import ProtectedRoute from './src/components/ProtectedRoute';
+import LoginView from './views/LoginView';
 import { currentUser } from './mockData';
 import DashboardHome from './views/DashboardHome';
 import FinanceiroLayout from './views/Financeiro/FinanceiroLayout';
@@ -44,8 +47,8 @@ const SidebarItem = ({
     <Link
       to={to}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${active
-          ? 'bg-primary text-white shadow-md'
-          : 'text-gray-500 hover:bg-primary/10 hover:text-primary'
+        ? 'bg-primary text-white shadow-md'
+        : 'text-gray-500 hover:bg-primary/10 hover:text-primary'
         }`}
     >
       <Icon size={20} className={active ? 'text-white' : 'text-gray-400 group-hover:text-primary'} />
@@ -56,6 +59,7 @@ const SidebarItem = ({
 
 // Fixed: Added optional children to the props type to resolve the 'missing children' error in some TypeScript environments
 const MainLayout = ({ children }: { children?: React.ReactNode }) => {
+  const { user, profile } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // New state for mobile
   const location = useLocation();
@@ -107,7 +111,15 @@ const MainLayout = ({ children }: { children?: React.ReactNode }) => {
           <SidebarItem to="/crm" icon={Users} label="CRM / Vendas" collapsed={collapsed} active={isPathActive('/crm')} />
           <SidebarItem to="/tarefas" icon={CheckSquare} label="Tarefas" collapsed={collapsed} active={isPathActive('/tarefas')} />
           <SidebarItem to="/financeiro" icon={DollarSign} label="Financeiro" collapsed={collapsed} active={isPathActive('/financeiro')} />
-          <SidebarItem to="/config" icon={Settings} label="Configurações" collapsed={collapsed} active={isPathActive('/config')} />
+
+          <div className="pt-2 mt-2 border-t border-gray-100">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+              {!collapsed ? 'Configurações' : 'Config'}
+            </div>
+            <SidebarItem to="/config/profile" icon={Users} label="Conta & Perfil" collapsed={collapsed} active={isPathActive('/config/profile')} />
+            <SidebarItem to="/config/users" icon={Settings} label="Usuários e Permissões" collapsed={collapsed} active={isPathActive('/config/users')} />
+            <SidebarItem to="/config/notifications" icon={Bell} label="Notificações" collapsed={collapsed} active={isPathActive('/config/notifications')} />
+          </div>
         </nav>
 
         <div className="p-4 border-t border-gray-100 hidden lg:block">
@@ -148,13 +160,14 @@ const MainLayout = ({ children }: { children?: React.ReactNode }) => {
             <div className="h-8 w-[1px] bg-gray-200"></div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <p className="text-sm font-semibold text-gray-900 leading-none">{currentUser.full_name}</p>
-                <p className="text-xs text-gray-500 mt-1 capitalize">{currentUser.role}</p>
+                <p className="text-sm font-semibold text-gray-900 leading-none">{profile?.full_name || user?.email}</p>
+                <p className="text-xs text-gray-500 mt-1 capitalize">{profile?.job_title || profile?.role || 'Usuário'}</p>
               </div>
               <img
-                src={currentUser.avatar_url}
+                src={profile?.avatar_url || 'https://via.placeholder.com/40'}
                 alt="Avatar"
-                className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5"
+                className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5 object-cover"
+                onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/40')}
               />
             </div>
           </div>
@@ -169,18 +182,35 @@ const MainLayout = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
+// Imports fixed to include Auth components
+// import { AuthProvider } from './src/contexts/AuthContext';
+// import ProtectedRoute from './src/components/ProtectedRoute';
+// import LoginView from './views/LoginView';
+
 const App: React.FC = () => {
   return (
     <Router>
-      <MainLayout>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<DashboardHome />} />
-          <Route path="/financeiro/*" element={<FinanceiroLayout />} />
-          <Route path="/crm/*" element={<CRMLayout />} />
-          <Route path="/tarefas" element={<TarefasView />} />
-          <Route path="/config" element={<ConfigView />} />
+          <Route path="/login" element={<LoginView />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<DashboardHome />} />
+                    <Route path="/financeiro/*" element={<FinanceiroLayout />} />
+                    <Route path="/crm/*" element={<CRMLayout />} />
+                    <Route path="/tarefas" element={<TarefasView />} />
+                    <Route path="/config/*" element={<ConfigView />} />
+                  </Routes>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </MainLayout>
+      </AuthProvider>
     </Router>
   );
 };
