@@ -7,28 +7,28 @@ export const api = {
         list: async () => {
             const { data, error } = await supabase.from('faturas').select('*');
             if (error) throw error;
-            return data as Fatura[];
+            return (data || []) as Fatura[];
         }
     },
     boletos: {
         list: async () => {
             const { data, error } = await supabase.from('boletos_vigor').select('*');
             if (error) throw error;
-            return data as BoletoVigor[];
+            return (data || []) as BoletoVigor[];
         }
     },
     propostas: {
         list: async () => {
             const { data, error } = await supabase.from('propostas').select('*');
             if (error) throw error;
-            return data as Proposta[];
+            return (data || []) as Proposta[];
         }
     },
     tarefas: {
         list: async () => {
             const { data, error } = await supabase.from('tarefas').select('*');
             if (error) throw error;
-            return data as Tarefa[];
+            return (data || []) as Tarefa[];
         }
     },
     auth: {

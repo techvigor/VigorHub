@@ -9,7 +9,11 @@ import {
   Clock,
   AlertCircle,
   MoreVertical,
-  Flag
+  Flag,
+  Trash2,
+  ArrowUpDown,
+  User,
+  Calendar
 } from 'lucide-react';
 import { api } from '../../src/services/api';
 
@@ -17,12 +21,11 @@ const TarefasView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'table'>('list');
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'priority' | 'date'>('priority');
 
   React.useEffect(() => {
     api.tarefas.list().then(setTarefas).finally(() => setLoading(false));
   }, []);
-
-  if (loading) return <div className="p-8 text-center text-gray-500">Carregando tarefas...</div>;
 
   const priorityColor = (p: string) => {
     switch (p) {
@@ -43,6 +46,20 @@ const TarefasView: React.FC = () => {
       default: return 'bg-gray-100 text-gray-500';
     }
   };
+
+  const priorityWeight = { 'alta': 3, 'media': 2, 'baixa': 1 };
+
+  const sortedTarefas = [...tarefas].sort((a, b) => {
+    if (sortOrder === 'priority') {
+      const weightA = priorityWeight[a.prioridade as keyof typeof priorityWeight] || 0;
+      const weightB = priorityWeight[b.prioridade as keyof typeof priorityWeight] || 0;
+      if (weightA !== weightB) return weightB - weightA; // Higher priority first
+    }
+    // Secondary sort by date (soonest first)
+    return new Date(a.vencimento || 0).getTime() - new Date(b.vencimento || 0).getTime();
+  });
+
+  if (loading) return <div className="p-8 text-center text-gray-500">Carregando tarefas...</div>;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -72,6 +89,13 @@ const TarefasView: React.FC = () => {
               <TableIcon size={18} />
             </button>
           </div>
+          <button
+            onClick={() => setSortOrder(prev => prev === 'priority' ? 'date' : 'priority')}
+            className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium transition-colors"
+          >
+            <ArrowUpDown size={20} />
+            Ordenar por {sortOrder === 'priority' ? 'Prioridade' : 'Data'}
+          </button>
           <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-sm">
             <Plus size={16} /> Nova Tarefa
           </button>
@@ -80,7 +104,7 @@ const TarefasView: React.FC = () => {
 
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {tarefas.map(tarefa => (
+          {sortedTarefas.map(tarefa => (
             <div key={tarefa.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4 hover:shadow-md transition-all group">
               <div className="mt-1">
                 <div className={`w-5 h-5 rounded border-2 border-gray-300 flex items-center justify-center cursor-pointer hover:border-primary transition-colors ${tarefa.status === 'concluido' ? 'bg-primary border-primary' : ''}`}>

@@ -15,7 +15,8 @@ import {
   AlertCircle,
   // Fixed: Added missing imports Calendar and PieChart
   Calendar,
-  PieChart
+  PieChart,
+  MoreVertical
 } from 'lucide-react';
 import { api } from '../../src/services/api';
 
@@ -115,74 +116,81 @@ const FinanceiroDashboard = () => {
 const FaturasList = () => {
   const [faturas, setFaturas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   React.useEffect(() => {
     api.faturas.list().then(setFaturas).finally(() => setLoading(false));
   }, []);
 
+  const sortedFaturas = [...faturas].sort((a, b) => {
+    const dateA = new Date(a.data_vencimento || 0).getTime();
+    const dateB = new Date(b.data_vencimento || 0).getTime();
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
+
   if (loading) return <div>Carregando faturas...</div>;
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-poppins font-bold">Faturas da Concessionária</h2>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50">
-            <Filter size={16} /> Filtros
-          </button>
-          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90">
-            <Plus size={16} /> Importar XML/PDF
-          </button>
-        </div>
+        <h2 className="text-xl font-poppins font-bold">Faturas Recentes</h2>
+        <button
+          onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+          className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors"
+        >
+          <Filter size={16} />
+          Ordenar por Vencimento ({sortOrder === 'asc' ? 'Antigos' : 'Recentes'})
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
-              <th className="px-6 py-4">Cliente / UC</th>
-              <th className="px-6 py-4">Ref / Vencimento</th>
-              <th className="px-6 py-4">Valor Distrib.</th>
-              <th className="px-6 py-4">Economia GD</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {faturas.map(fatura => (
-              <tr key={fatura.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">
-                  <p className="font-semibold text-gray-900">{fatura.cliente_nome}</p>
-                  <p className="text-xs text-gray-400">UC: {fatura.uc_codigo}</p>
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-sm text-gray-600">{fatura.mes_referencia}</p>
-                  <p className="text-xs text-gray-400">Vence: {fatura.data_vencimento ? new Date(fatura.data_vencimento).toLocaleDateString('pt-BR') : '-'}</p>
-                </td>
-                <td className="px-6 py-4 text-sm font-medium">R$ {Number(fatura.valor_fatura_distribuidora || 0).toFixed(2)}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-success">R$ {Number(fatura.valor_economia_gd || 0).toFixed(2)}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${fatura.status_boleto_vigor === 'processada' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                    }`}>
-                    {fatura.status_boleto_vigor}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="p-1.5 hover:bg-primary/10 rounded-lg text-primary transition-colors" title="Calcular Boleto">
-                      <Receipt size={18} />
-                    </button>
-                    <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
-                      <Edit size={18} />
-                    </button>
-                    <button className="p-1.5 hover:bg-error/10 rounded-lg text-error transition-colors">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Cliente / UC</th>
+                <th className="px-6 py-4">Referência</th>
+                <th className="px-6 py-4">Valor Dist.</th>
+                <th className="px-6 py-4">Economia</th>
+                <th className="px-6 py-4">Boleto Vigor</th>
+                <th className="px-6 py-4 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sortedFaturas.map(fatura => (
+                <tr key={fatura.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-bold text-gray-700">#{String(fatura.id).toUpperCase()}</span>
+                      <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full w-fit">BIFÁSICO</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-gray-900">{fatura.cliente_nome}</p>
+                    <p className="text-xs text-gray-400">UC: {fatura.uc_codigo}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm text-gray-600">{fatura.mes_referencia}</p>
+                    <p className="text-xs text-gray-400">Vence: {fatura.data_vencimento ? new Date(fatura.data_vencimento).toLocaleDateString('pt-BR') : '-'}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium">R$ {Number(fatura.valor_fatura_distribuidora || 0).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-success">R$ {Number(fatura.valor_economia_gd || 0).toFixed(2)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${fatura.status_boleto_vigor === 'processada' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                      }`}>
+                      {fatura.status_boleto_vigor || 'PENDENTE'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-gray-400 hover:text-primary transition-colors p-2 hover:bg-gray-100 rounded-full">
+                      <MoreVertical size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -191,66 +199,83 @@ const FaturasList = () => {
 const BoletosList = () => {
   const [boletos, setBoletos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Default asc for next due
 
   React.useEffect(() => {
     api.boletos.list().then(setBoletos).finally(() => setLoading(false));
   }, []);
+
+  const sortedBoletos = [...boletos].sort((a, b) => {
+    const dateA = new Date(a.data_vencimento || 0).getTime();
+    const dateB = new Date(b.data_vencimento || 0).getTime();
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
 
   if (loading) return <div>Carregando boletos...</div>;
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-poppins font-bold">Boletos Vigor</h2>
-        <button className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50">
-          <Download size={16} /> Exportar Lista
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors"
+          >
+            <Filter size={16} />
+            Ordenar por Vencimento ({sortOrder === 'asc' ? 'Próximos' : 'Distantes'})
+          </button>
+          <button className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50">
+            <Download size={16} /> Exportar Lista
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
-              <th className="px-6 py-4">Boleto / Ref</th>
-              <th className="px-6 py-4">Vencimento</th>
-              <th className="px-6 py-4">Valor Total</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {boletos.map(boleto => (
-              <tr key={boleto.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">
-                  <p className="font-semibold text-gray-900">BOLETO #{String(boleto.id).toUpperCase()}</p>
-                  <p className="text-xs text-gray-400">Emissão: {boleto.data_emissao ? new Date(boleto.data_emissao).toLocaleDateString('pt-BR') : '-'}</p>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {boleto.data_vencimento ? new Date(boleto.data_vencimento).toLocaleDateString('pt-BR') : '-'}
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-sm font-bold text-gray-900">R$ {Number(boleto.valor_total || 0).toFixed(2)}</p>
-                  <p className="text-[10px] text-success">Desconto: R$ {Number(boleto.valor_desconto || 0).toFixed(2)}</p>
-                </td>
-                <td className="px-6 py-4">
-                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${boleto.status === 'pago' ? 'bg-success/10 text-success' :
-                    boleto.status === 'emitido' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'
-                    }`}>
-                    {boleto.status === 'pago' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                    <span className="text-[10px] font-bold uppercase">{boleto.status}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="text-primary text-xs font-bold hover:underline">Ver PDF Fatura</button>
-                    <button className="p-2 bg-primary/5 text-primary rounded hover:bg-primary/10 transition-colors">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                <th className="px-6 py-4">Boleto / Ref</th>
+                <th className="px-6 py-4">Vencimento</th>
+                <th className="px-6 py-4">Valor Total</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sortedBoletos.map(boleto => (
+                <tr key={boleto.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-gray-900">BOLETO #{String(boleto.id).toUpperCase()}</p>
+                    <p className="text-xs text-gray-400">Emissão: {boleto.data_emissao ? new Date(boleto.data_emissao).toLocaleDateString('pt-BR') : '-'}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {boleto.data_vencimento ? new Date(boleto.data_vencimento).toLocaleDateString('pt-BR') : '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-gray-900">R$ {Number(boleto.valor_total || 0).toFixed(2)}</p>
+                    <p className="text-[10px] text-success">Desconto: R$ {Number(boleto.valor_desconto || 0).toFixed(2)}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${boleto.status === 'pago' ? 'bg-success/10 text-success' :
+                      boleto.status === 'vencido' ? 'bg-red-100 text-red-600' : 'bg-warning/10 text-warning'
+                      }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${boleto.status === 'pago' ? 'bg-success' :
+                        boleto.status === 'vencido' ? 'bg-red-600' : 'bg-warning'
+                        }`}></div>
+                      <span className="text-[10px] font-bold uppercase">{boleto.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-gray-400 hover:text-primary transition-colors p-2 hover:bg-gray-100 rounded-full">
                       <Download size={16} />
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
