@@ -93,16 +93,12 @@ const MainLayout = ({ children }: { children?: React.ReactNode }) => {
         <div className="p-6 flex items-center justify-between overflow-hidden">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xl">V</span>
-              </div>
+              <img src="/favicon.png" alt="Logo" className="w-8 h-8 object-contain" />
               <span className="text-primary font-poppins font-bold text-xl tracking-tight">VigorHub</span>
             </div>
           )}
           {collapsed && (
-            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center mx-auto">
-              <span className="text-white font-bold text-xl">V</span>
-            </div>
+            <img src="/favicon.png" alt="Logo" className="w-8 h-8 object-contain mx-auto" />
           )}
         </div>
 

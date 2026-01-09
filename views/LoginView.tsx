@@ -37,9 +37,7 @@ const LoginView = () => {
                     {/* Logo */}
                     <div className="flex justify-center mb-8">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
-                                <span className="text-white font-bold text-3xl">V</span>
-                            </div>
+                            <img src="/favicon.png" alt="Logo" className="w-12 h-12 object-contain" />
                             <span className="text-3xl font-poppins font-bold text-gray-900 tracking-tight">VigorHub</span>
                         </div>
                     </div>

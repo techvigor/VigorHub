@@ -7,6 +7,7 @@ export interface Profile {
   role: UserRole;
   avatar_url: string;
   job_title?: string;
+  status: 'active' | 'inactive';
   created_at: string;
 }
 
